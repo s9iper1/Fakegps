@@ -3,11 +3,13 @@ package com.example.fukakome.fakegps;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.CountDownTimer;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
@@ -62,10 +64,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     class MyLocationListener implements LocationListener {
         @Override
         public void onLocationChanged(Location location) {
-            if (baseLocation == null) {
-                baseLocation = location;
-                startFakingGPS();
-            }
 
             String msg = "Lat=" + location.getLatitude()
                     + "\nLng=" + location.getLongitude();
@@ -115,21 +113,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     REQUEST_CODE);
         }
 
-        try {
+//        try {
+//
+//            mLocationManager.requestLocationUpdates(
+//                    LocationManager.GPS_PROVIDER, //LocationManager.NETWORK_PROVIDER,
+//                    0, 0,
+//                    listener);
+//            mLocationManager.requestLocationUpdates(
+//                    LocationManager.NETWORK_PROVIDER,
+//                    0, 0,
+//                    listener);
+//        } catch (SecurityException ex) {
+//            Log.e("ERROR", ex.toString());
+//        }
 
-            mLocationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER, //LocationManager.NETWORK_PROVIDER,
-                    0, 0,
-                    listener);
-            mLocationManager.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER,
-                    0, 0,
-                    listener);
-        } catch (SecurityException ex) {
-            Log.e("ERROR", ex.toString());
-        }
-
-//        startFakingGPS();
+        startFakingGPS();
 
         mapFragment.getMapAsync(this);
     }
@@ -138,12 +136,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     int position = 0;
 
     void startFakingGPS() {
+        Log.i("TAG", " now faking gps ");
         allMockedPositions = new ArrayList<Location>();
         allMockedPositions.add(createNewLocation(126.837095, 30.800168 ));
-        allMockedPositions.add(createNewLocation(129.836902, 32.799897 ));
-        allMockedPositions.add(createNewLocation(132.836001, 35.799970));
+        allMockedPositions.add(createNewLocation(126.837095, 30.800168  ));
+        allMockedPositions.add(createNewLocation(126.837095, 30.800168 ));
 
-        mCountDownTimer = new CountDownTimer(5000, 3000) {
+        mCountDownTimer = new CountDownTimer(2000, 2000) {
             public void onTick(long millisUntilFinished) {
             }
 
@@ -151,14 +150,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (allMockedPositions.size() > position) {
                     Location mockedLocation = allMockedPositions.get(position++);
                     mockedLocation.setTime(System.currentTimeMillis());
+                    mockedLocation.setAccuracy(50);
+                    mockedLocation.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
 
                     mLocationManager.addTestProvider(LocationManager.GPS_PROVIDER, false,
                             false, false , false,
                             true, true, true, 0, 5);
                     mLocationManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, true);
                     mLocationManager.setTestProviderLocation(LocationManager.GPS_PROVIDER, mockedLocation);
-                    mLocationManager.setTestProviderStatus(LocationManager.GPS_PROVIDER, LocationProvider.AVAILABLE, null, System.currentTimeMillis());
 
+                    mLocationManager.addTestProvider(LocationManager.NETWORK_PROVIDER, false, false, false, false, true, true, true,
+                            Criteria.POWER_LOW, Criteria.ACCURACY_FINE);
+
+                    mLocationManager.setTestProviderEnabled(LocationManager.NETWORK_PROVIDER, true);
+                    mLocationManager.setTestProviderLocation(LocationManager.NETWORK_PROVIDER, mockedLocation);
+                    mLocationManager.setTestProviderStatus(LocationManager.NETWORK_PROVIDER, LocationProvider.AVAILABLE, null, System.currentTimeMillis());
+//                    mLocationManager.setTestProviderEnabled(LocationManager.PASSIVE_PROVIDER, true);
+//                    mLocationManager.setTestProviderLocation(LocationManager.PASSIVE_PROVIDER, mockedLocation);
+//                    mLocationManager.setTestProviderStatus(LocationManager.PASSIVE_PROVIDER, LocationProvider.AVAILABLE, null, System.currentTimeMillis());
+
+                    mLocationManager.setTestProviderStatus(LocationManager.GPS_PROVIDER, LocationProvider.AVAILABLE, null, System.currentTimeMillis());
                     LatLng marker = new LatLng(mockedLocation.getLatitude(), mockedLocation.getLongitude());
                     mMap.addMarker(new MarkerOptions().position(marker).title("Marker"));
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(marker));
@@ -175,10 +186,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }.start();
     }
 
-    Location baseLocation = null;
-
     Location createNewLocation(double longitude, double latitude) {
-        Location location = new Location(baseLocation);
+        Location location = new Location(LocationManager.GPS_PROVIDER);
         location.setLongitude(longitude);
         location.setLatitude(latitude);
         location.setAltitude(0.0f);
@@ -205,8 +214,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
 
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+//        LatLng sydney = new LatLng(-34, 151);
+//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
+//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
     }
 }
